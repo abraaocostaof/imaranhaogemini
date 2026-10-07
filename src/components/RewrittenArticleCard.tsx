@@ -145,7 +145,7 @@ export const RewrittenArticleCard: React.FC<RewrittenArticleCardProps> = ({
           {/* Original headline (subdued) */}
           <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/60 text-xs">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-              Título Original do G1 (Bloqueado p/ Evitar Plágio):
+              Pauta de Referência Base:
             </span>
             <p className="text-slate-700 line-clamp-2 italic">
               "{article.tituloOriginal}"

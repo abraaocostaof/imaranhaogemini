@@ -39,20 +39,20 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           {/* Logo & Identity */}
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-red-600 flex items-center justify-center text-white font-bold text-xl shadow-xs">
-              G1
+            <div className="h-10 w-10 rounded-xl bg-[#b91c1c] flex items-center justify-center text-white font-black text-lg shadow-xs">
+              iM
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-lg font-bold text-slate-900 tracking-tight font-sans">
-                  Extrator & Validador de Notícias
+                  Central de Pautas & Inteligência Editorial
                 </h1>
                 <span className="text-[11px] font-semibold text-red-700 bg-red-50 border border-red-200/60 px-2 py-0.5 rounded">
-                  PoC Oficial
+                  Redação
                 </span>
               </div>
               <p className="text-xs text-slate-500">
-                Raspagem estruturada, saneamento de ruídos e conferência lado a lado
+                Monitoramento contínuo de coberturas factuais e produção autoral
               </p>
             </div>
           </div>

@@ -10,6 +10,7 @@ import { CycleLogsView } from './components/CycleLogsView.tsx';
 import { G1PortalView } from './components/G1PortalView.tsx';
 import { G1ArticleReaderModal } from './components/G1ArticleReaderModal.tsx';
 import { AdminLeadsView } from './components/AdminLeadsView.tsx';
+import { AdminLoginModal } from './components/AdminLoginModal.tsx';
 import { ScrapedArticle, EditoriaOption, RegistryState, RewrittenArticle } from './types.ts';
 import {
   AlertCircle,
@@ -22,7 +23,8 @@ import {
   Layout,
   SlidersHorizontal,
   ExternalLink,
-  Users
+  Users,
+  LogOut
 } from 'lucide-react';
 
 const DEFAULT_EDITORIAS: EditoriaOption[] = [
@@ -46,8 +48,12 @@ export default function App() {
   const [successToast, setSuccessToast] = useState<string | null>(null);
   const [activeAuditArticle, setActiveAuditArticle] = useState<ScrapedArticle | null>(null);
 
-  // View Mode: 'portal' (Página G1 Clone com notícias reescritas) vs 'admin' (Painel do Monitor & Raspador)
+  // View Mode: 'portal' vs 'admin'
   const [viewMode, setViewMode] = useState<'portal' | 'admin'>('portal');
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    return typeof window !== 'undefined' ? !!localStorage.getItem('imaranhao_auth_token') : false;
+  });
+  const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
 
   // Active article reader modal for the G1 portal
   const [selectedReadingArticle, setSelectedReadingArticle] = useState<RewrittenArticle | null>(null);
@@ -129,8 +135,19 @@ export default function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // Check direct URL navigation for articles (e.g. /noticia/rw-123)
+  // Check direct URL navigation for articles (e.g. /noticia/rw-123) or /admin
   useEffect(() => {
+    if (window.location.pathname === '/admin' || window.location.pathname === '/painel') {
+      if (isAuthenticated) {
+        setViewMode('admin');
+        setShowLoginModal(false);
+      } else {
+        setViewMode('portal');
+        setShowLoginModal(true);
+      }
+      return;
+    }
+
     const match = window.location.pathname.match(/\/noticia\/([^\/]+)/);
     const initialArticleId = (window as any).__INITIAL_ARTICLE_ID__ || (match && match[1]);
 
@@ -140,11 +157,25 @@ export default function App() {
         setSelectedReadingArticle(found);
       }
     }
-  }, [registry?.articles]);
+  }, [registry?.articles, isAuthenticated]);
 
   // Handle browser Back / Forward buttons
   useEffect(() => {
     const handlePopState = () => {
+      if (window.location.pathname === '/admin' || window.location.pathname === '/painel') {
+        if (isAuthenticated) {
+          setViewMode('admin');
+          setShowLoginModal(false);
+        } else {
+          setViewMode('portal');
+          setShowLoginModal(true);
+        }
+        setSelectedReadingArticle(null);
+        return;
+      }
+
+      setViewMode('portal');
+      setShowLoginModal(false);
       const match = window.location.pathname.match(/\/noticia\/([^\/]+)/);
       if (match && match[1] && registry?.articles) {
         const found = registry.articles.find(a => a.id === match[1] || a.originalId === match[1]);
@@ -158,7 +189,7 @@ export default function App() {
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [registry?.articles]);
+  }, [registry?.articles, isAuthenticated]);
 
   const handleOpenArticle = (art: RewrittenArticle) => {
     setSelectedReadingArticle(art);
@@ -169,6 +200,54 @@ export default function App() {
 
   const handleCloseArticle = () => {
     setSelectedReadingArticle(null);
+    try {
+      window.history.pushState(null, '', viewMode === 'admin' ? '/admin' : '/');
+    } catch {}
+  };
+
+  const handleGoToAdmin = () => {
+    if (isAuthenticated) {
+      setViewMode('admin');
+      setShowLoginModal(false);
+      try {
+        window.history.pushState(null, '', '/admin');
+      } catch {}
+    } else {
+      setShowLoginModal(true);
+    }
+  };
+
+  const handleLoginSuccess = () => {
+    setIsAuthenticated(true);
+    setShowLoginModal(false);
+    setViewMode('admin');
+    try {
+      window.history.pushState(null, '', '/admin');
+    } catch {}
+  };
+
+  const handleLoginCancel = () => {
+    setShowLoginModal(false);
+    setViewMode('portal');
+    try {
+      window.history.pushState(null, '', '/');
+    } catch {}
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('imaranhao_auth_token');
+    localStorage.removeItem('imaranhao_auth_user');
+    setIsAuthenticated(false);
+    setShowLoginModal(false);
+    setViewMode('portal');
+    try {
+      window.history.pushState(null, '', '/');
+    } catch {}
+  };
+
+  const handleGoToPortal = () => {
+    setViewMode('portal');
+    setShowLoginModal(false);
     try {
       window.history.pushState(null, '', '/');
     } catch {}
@@ -348,7 +427,7 @@ export default function App() {
         <G1PortalView
           articles={rewrittenList}
           onOpenArticleReader={handleOpenArticle}
-          onSwitchToAdmin={() => setViewMode('admin')}
+          onSwitchToAdmin={handleGoToAdmin}
         />
       ) : (
         /* VIEW 2: PAINEL EDITORIAL & MONITOR */
@@ -360,13 +439,24 @@ export default function App() {
               <span className="text-slate-500">·</span>
               <span className="text-slate-300">Painel de Monitoramento & Inteligência Editorial</span>
             </div>
-            <button
-              onClick={() => setViewMode('portal')}
-              className="inline-flex items-center gap-1.5 bg-[#b91c1c] hover:bg-red-700 text-white font-bold text-xs px-3 py-1 rounded transition-colors cursor-pointer"
-            >
-              <Layout className="w-3.5 h-3.5" />
-              <span>Ver Portal imaranhao</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleGoToPortal}
+                className="inline-flex items-center gap-1.5 bg-[#b91c1c] hover:bg-red-700 text-white font-bold text-xs px-3 py-1 rounded transition-colors cursor-pointer"
+              >
+                <Layout className="w-3.5 h-3.5" />
+                <span>Ver Portal imaranhao</span>
+              </button>
+
+              <button
+                onClick={handleLogout}
+                className="inline-flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-semibold text-xs px-2.5 py-1 rounded border border-slate-700 transition-colors cursor-pointer"
+                title="Encerrar sessão de administrador"
+              >
+                <LogOut className="w-3.5 h-3.5 text-red-400" />
+                <span>Sair</span>
+              </button>
+            </div>
           </div>
 
           {/* Header with control bar */}
@@ -433,7 +523,7 @@ export default function App() {
                   }`}
                 >
                   <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                  <span>Monitor da Home G1 & Notícias Reescritas</span>
+                  <span>Pautas & Notícias da Redação</span>
                   {rewrittenList.length > 0 && (
                     <span className="bg-[#b91c1c] text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full">
                       {rewrittenList.length}
@@ -467,7 +557,7 @@ export default function App() {
                   }`}
                 >
                   <SplitSquareVertical className="w-3.5 h-3.5 text-slate-700" />
-                  <span>Auditor Cheerio</span>
+                  <span>Auditor de Apuração</span>
                 </button>
 
                 <button
@@ -651,11 +741,19 @@ export default function App() {
         />
       )}
 
-      {/* Full Reading Page Modal for G1 Portal */}
+      {/* Full Reading Page Modal */}
       {selectedReadingArticle && (
         <G1ArticleReaderModal
           article={selectedReadingArticle}
           onClose={handleCloseArticle}
+        />
+      )}
+
+      {/* Admin Login Authentication Modal */}
+      {showLoginModal && (
+        <AdminLoginModal
+          onSuccess={handleLoginSuccess}
+          onCancel={handleLoginCancel}
         />
       )}
     </div>

@@ -39,6 +39,46 @@ async function startServer() {
 
   app.use(express.json());
 
+  // ADMIN AUTHENTICATION API
+  // POST /api/auth/login
+  app.post('/api/auth/login', (req: Request, res: Response) => {
+    const { username, password } = req.body || {};
+    const expectedUser = process.env.ADMIN_USER || 'admin';
+    const expectedPass = process.env.ADMIN_PASS || 'imaranhao2026';
+
+    if (username === expectedUser && password === expectedPass) {
+      const token = Buffer.from(`${username}:${Date.now()}:${expectedPass}`).toString('base64');
+      return res.json({
+        success: true,
+        user: username,
+        token
+      });
+    }
+
+    return res.status(401).json({
+      success: false,
+      error: 'Usuário ou senha incorretos.'
+    });
+  });
+
+  // POST /api/auth/verify
+  app.post('/api/auth/verify', (req: Request, res: Response) => {
+    const { token } = req.body || {};
+    if (!token) {
+      return res.status(401).json({ valid: false });
+    }
+    try {
+      const decoded = Buffer.from(token, 'base64').toString('utf-8');
+      const [user, , pass] = decoded.split(':');
+      const expectedUser = process.env.ADMIN_USER || 'admin';
+      const expectedPass = process.env.ADMIN_PASS || 'imaranhao2026';
+      if (user === expectedUser && pass === expectedPass) {
+        return res.json({ valid: true, user });
+      }
+    } catch {}
+    return res.status(401).json({ valid: false });
+  });
+
   // LEADS CAPTURE API
   // GET /api/leads
   app.get('/api/leads', (_req: Request, res: Response) => {

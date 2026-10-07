@@ -77,11 +77,11 @@ export const MonitorControl: React.FC<MonitorControlProps> = ({
             <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-ping"></span>
             <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 -ml-4.5"></span>
             <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
-              Monitor Contínuo da Home do G1 (<span className="text-red-600 font-mono text-xs sm:text-sm">g1.globo.com</span>)
+              Monitor Contínuo de Pautas Factuais (Regional & Nacional)
             </h2>
           </div>
           <p className="text-xs text-slate-500 max-w-2xl leading-relaxed">
-            Examina as <strong>10 primeiras notícias</strong> do topo da página inicial. Realiza análise prévia para descartar matérias já publicadas anteriormente, extrai as novas, redige anotações e reescreve o texto de forma inédita.
+            Monitora coberturas em tempo real, descarta matérias já publicadas anteriormente com filtro anti-duplicação, sintetiza os fatos e redige novas reportagens autorais para o <strong>imaranhao</strong>.
           </p>
         </div>
 
@@ -90,10 +90,10 @@ export const MonitorControl: React.FC<MonitorControlProps> = ({
           <button
             onClick={onRunCycle}
             disabled={isRunningCycle}
-            className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition-all shadow-xs disabled:opacity-60 cursor-pointer"
+            className="inline-flex items-center gap-2 bg-[#b91c1c] hover:bg-red-700 active:bg-red-800 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition-all shadow-xs disabled:opacity-60 cursor-pointer"
           >
             <RefreshCw className={`w-4 h-4 ${isRunningCycle ? 'animate-spin' : ''}`} />
-            <span>{isRunningCycle ? 'Analisando 10 Notícias...' : 'Verificar as 10 Agora'}</span>
+            <span>{isRunningCycle ? 'Apurando Novas Matérias...' : 'Buscar Novas Pautas Agora'}</span>
           </button>
         </div>
       </div>

@@ -232,7 +232,8 @@ Responda ESTRITAMENTE em formato JSON com a seguinte estrutura:
     editoria: cleanEditoria,
     dataPublicacaoOriginal: article.dataPublicacao,
     processadoEm: new Date().toISOString(),
-    status: 'reescrita',
+    status: 'publicada',
+    publicadoEm: new Date().toISOString(),
     ...resultData,
     tags: cleanTags
   };

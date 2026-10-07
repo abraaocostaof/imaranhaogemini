@@ -21,8 +21,10 @@ import {
   runMonitoringCycle,
   updateConfig,
   markAsPublished,
-  clearRegistry
+  clearRegistry,
+  addOrUpdateArticle
 } from './src/server/registry.ts';
+import { rewriteArticle } from './src/server/rewriter.ts';
 import { injectArticleSeo } from './src/server/seoHandler.ts';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -135,10 +137,21 @@ async function startServer() {
       const articles = await scrapeArticleList(urls, editoriaKey);
 
       // Step 3: Persist to storage & cache
-      const saved = saveArticles(articles, editoriaKey);
+      saveArticles(articles, editoriaKey);
 
-      // Return according to PRD specification: array of 5 extracted objects
-      // We also attach headers or provide both for maximum compatibility
+      // Step 4: Automatic Publication Flow: rewrite and save to published registry
+      Promise.all(
+        articles.map(async (art) => {
+          try {
+            const rewritten = await rewriteArticle(art);
+            addOrUpdateArticle(rewritten);
+          } catch (rwErr: any) {
+            console.warn('[server.ts] Error auto-rewriting scraped article:', rwErr.message);
+          }
+        })
+      ).catch(e => console.error('[server.ts] Background auto-publish error:', e));
+
+      // Return array of extracted objects
       res.json(articles);
     } catch (err: any) {
       console.error('[server.ts] Scrape error:', err);
@@ -146,16 +159,25 @@ async function startServer() {
     }
   });
 
-  // 4. POST /api/scrape-url (Deep scrape a specific G1 article URL for validation)
+  // 4. POST /api/scrape-url (Deep scrape a specific article URL and auto-publish)
   app.post('/api/scrape-url', async (req: Request, res: Response) => {
     try {
       const { url } = req.body;
-      if (!url || typeof url !== 'string' || !url.includes('g1.globo.com')) {
-        return res.status(400).json({ error: 'URL inválida. Forneça uma URL de notícia do portal G1.' });
+      if (!url || typeof url !== 'string') {
+        return res.status(400).json({ error: 'URL inválida. Forneça uma URL de notícia válida.' });
       }
 
       console.log(`[server.ts] Scraping custom URL: ${url}`);
       const article = await scrapeArticle(url);
+
+      // Automatic Publication: rewrite with Gemini and add to published registry
+      try {
+        const rewritten = await rewriteArticle(article);
+        addOrUpdateArticle(rewritten);
+      } catch (rwErr: any) {
+        console.warn('[server.ts] Auto-rewrite failed for custom url:', rwErr.message);
+      }
+
       res.json(article);
     } catch (err: any) {
       console.error('[server.ts] Error scraping custom URL:', err);

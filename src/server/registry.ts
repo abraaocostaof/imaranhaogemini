@@ -75,7 +75,11 @@ export function initRegistry(): void {
       if (parsed && Array.isArray(parsed.articles)) {
         inMemoryRegistry = {
           config: { ...inMemoryRegistry.config, ...(parsed.config || {}) },
-          articles: parsed.articles,
+          articles: parsed.articles.map((art: any) => ({
+            ...art,
+            status: 'publicada',
+            publicadoEm: art.publicadoEm || art.processadoEm || new Date().toISOString()
+          })),
           logs: parsed.logs || []
         };
         console.log(`[registry.ts] Registry loaded with ${inMemoryRegistry.articles.length} published articles and ${inMemoryRegistry.logs.length} logs.`);
@@ -290,6 +294,18 @@ export function markAsPublished(articleId: string): boolean {
     return true;
   }
   return false;
+}
+
+export function addOrUpdateArticle(article: RewrittenArticle): void {
+  const existingIdx = inMemoryRegistry.articles.findIndex(
+    a => a.id === article.id || a.urlOriginal === article.urlOriginal
+  );
+  if (existingIdx >= 0) {
+    inMemoryRegistry.articles[existingIdx] = article;
+  } else {
+    inMemoryRegistry.articles.unshift(article);
+  }
+  persistRegistry();
 }
 
 export function clearRegistry(): void {

@@ -1,0 +1,6 @@
+{
+  "name": "G1 News Scraper & Validator",
+  "description": "Sistema automatizado de captura, extração semântica e auditoria comparativa lado a lado de notícias do portal G1.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
